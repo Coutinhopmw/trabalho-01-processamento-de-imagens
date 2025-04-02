@@ -1,30 +1,96 @@
 import cv2
 import numpy as np
 
-# Carregar a imagem
-imagem = cv2.imread('curiosidades-sobre-leao2.jpg')
+def interpolacao_bilinear(imagem, escala):
+    altura_original, largura_original = imagem.shape
+    nova_altura = int(altura_original * escala)
+    nova_largura = int(largura_original * escala)
+    
+    imagem_redimensionada = np.zeros((nova_altura, nova_largura), dtype=np.uint8)
+    
+    for y in range(nova_altura):
+        for x in range(nova_largura):
+            # Mapeia a posição do pixel na imagem original
+            x_original = x / escala
+            y_original = y / escala
 
-# Verificar se a imagem foi carregada corretamente
-if imagem is None:
-    print("Erro ao carregar a imagem!")
-    exit()
+            # Pega os pixels vizinhos
+            x0 = int(x_original)
+            x1 = min(x0 + 1, largura_original - 1)
+            y0 = int(y_original)
+            y1 = min(y0 + 1, altura_original - 1)
 
-# Converter para escala de cinza
-imagem_cinza = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
+            # Calcula os pesos
+            dx = x_original - x0
+            dy = y_original - y0
 
-print("Matriz da imagem em escala de cinza:")
-print(imagem_cinza)
+            # Obtém os valores dos pixels vizinhos
+            p1 = imagem[y0, x0] * (1 - dx) * (1 - dy)
+            p2 = imagem[y0, x1] * dx * (1 - dy)
+            p3 = imagem[y1, x0] * (1 - dx) * dy
+            p4 = imagem[y1, x1] * dx * dy
 
-# Obter as dimensões da imagem corretamente
-altura, largura = imagem_cinza.shape  # Agora a imagem tem apenas 2 dimensões
-print(f"Dimensões: {altura}x{largura}")
+            # Calcula o valor do pixel interpolado
+            imagem_redimensionada[y, x] = int(p1 + p2 + p3 + p4)
 
-# Acessar um pixel específico (por exemplo, na posição x=50, y=100)
-x, y = 50, 100
-valor_pixel = imagem_cinza[y, x]  # Agora acessamos na matriz em escala de cinza
-print(f"Valor do pixel em ({x}, {y}): {valor_pixel}")
+    return imagem_redimensionada
 
-# Exibir a imagem em escala de cinza
-cv2.imshow('Imagem em Cinza', imagem_cinza)
+def interpolacao_bilinear_ampliacao(imagem, escala):
+    altura_original, largura_original = imagem.shape
+    nova_altura = int(altura_original * escala)
+    nova_largura = int(largura_original * escala)
+
+    imagem_ampliada = np.zeros((nova_altura, nova_largura), dtype=np.uint8)
+
+    for y in range(nova_altura):
+        for x in range(nova_largura):
+            # Mapeia a posição do pixel na imagem original
+            x_original = x / escala
+            y_original = y / escala
+
+            # Pega os pixels vizinhos
+            x0 = int(np.floor(x_original))
+            x1 = min(x0 + 1, largura_original - 1)
+            y0 = int(np.floor(y_original))
+            y1 = min(y0 + 1, altura_original - 1)
+
+            # Calcula os pesos
+            dx = x_original - x0
+            dy = y_original - y0
+
+            # Obtém os valores dos pixels vizinhos
+            p1 = imagem[y0, x0] * (1 - dx) * (1 - dy)
+            p2 = imagem[y0, x1] * dx * (1 - dy)
+            p3 = imagem[y1, x0] * (1 - dx) * dy
+            p4 = imagem[y1, x1] * dx * dy
+
+            # Calcula o valor do pixel interpolado
+            imagem_ampliada[y, x] = int(p1 + p2 + p3 + p4)
+
+    return imagem_ampliada
+
+# Carregar a imagem em escala de cinza
+imagem = cv2.imread("curiosidades-sobre-leao2.jpg", cv2.IMREAD_GRAYSCALE)
+
+# Definir fator de ampliação (ex: 2.0 para dobrar o tamanho)
+escala = 2.0
+imagem_ampliada = interpolacao_bilinear_ampliacao(imagem, escala)
+
+# Mostrar e salvar a imagem ampliada
+cv2.imshow("Imagem Ampliada", imagem_ampliada)
+cv2.imwrite("imagem_ampliada.jpg", imagem_ampliada)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# Carregar a imagem em escala de cinza
+imagem = cv2.imread("curiosidades-sobre-leao2.jpg", cv2.IMREAD_GRAYSCALE)
+
+# Definir fator de redução (ex: 0.5 para reduzir pela metade)
+escala = 0.5
+imagem_reduzida = interpolacao_bilinear(imagem, escala)
+
+# Mostrar e salvar a imagem reduzida
+cv2.imshow("Imagem Reduzida", imagem_reduzida)
+cv2.imwrite("imagem_reduzida.jpg", imagem_reduzida)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
